@@ -1,24 +1,20 @@
-import logo from './logo.svg';
-import './App.css';
+import { AppProvider } from "./context";
+import Bfs from "./components/Bfs";
+import Dfs from "./components/Dfs";
+import MazeTotal from "./components/MazeTotal";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppProvider>
+      <main className="main">
+        <h1 className="main-title">BFS vs DFS Graph Algorithms</h1>
+        <MazeTotal />
+        <section className="main-searches">
+          <Bfs />
+          <Dfs />
+        </section>
+      </main>
+    </AppProvider>
   );
 }
 
