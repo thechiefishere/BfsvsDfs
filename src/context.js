@@ -11,7 +11,7 @@ export const AppProvider = ({ children }) => {
   const [queue, setQueue] = useState([]);
   const [visitedBfs, setVisitedBfs] = useState([]);
   const [targetFoundBfs, setTargetFoundBfs] = useState(false);
-  const [initQueueBfs, setInitQueueBfs] = useState(true);
+  const [isFirstElementInQueue, setIsFirstElementInQueue] = useState(true);
   const [reflectVisitedBfs, setReflectVisitedBfs] = useState([]);
   const [bfsCompleted, setBfsCompleted] = useState(false);
   const [bfsCompletionTime, setBfsCompletionTime] = useState(0);
@@ -19,88 +19,143 @@ export const AppProvider = ({ children }) => {
   const [stack, setStack] = useState([]);
   const [visitedDfs, setVisitedDfs] = useState([]);
   const [targetFoundDfs, setTargetFoundDfs] = useState(false);
-  const [initStackDfs, setInitStackDfs] = useState(true);
+  const [isFirstElementInStack, setIsFirstElementInStack] = useState(true);
   const [reflectVisitedDfs, setReflectVisitedDfs] = useState([]);
   const [dfsCompleted, setDfsCompleted] = useState(false);
   const [dfsCompletionTime, setDfsCompletionTime] = useState(0);
 
-  const getRandomNum = () => {
+  /**
+   * generateRandomNumber generates a random number.
+   * @returns a random number
+   */
+  const generateRandomNumber = () => {
     return Math.floor(Math.random() * Math.pow(squareVal, 2)) + 1;
   };
 
+  /**
+   * Effect that set startingNum and TargetNum for both
+   * algorithm through generateRandomNumber.
+   */
   useEffect(() => {
     setArr([]);
     for (let i = 1; i <= squareVal * squareVal; i++) {
       setArr((arr) => [...arr, i]);
     }
-    setStartingNum(getRandomNum());
-    setTargetNum(getRandomNum());
+    setStartingNum(generateRandomNumber());
+    setTargetNum(generateRandomNumber());
     reset();
   }, [squareVal, restart]);
 
   useEffect(() => {
-    if (!targetFoundBfs) {
-      let tempVisitedBfs = visitedBfs;
-      let tempQueue = queue;
+    if (targetFoundBfs) return;
+    let visitedBfsClone = visitedBfs;
+    let queueClone = queue;
 
-      if (startingNum === 0) return;
-      if (initQueueBfs) {
-        tempQueue.push(startingNum);
-        setInitQueueBfs(false);
+    if (startingNum === 0) return;
+    pushFirstElementToArray(
+      isFirstElementInQueue,
+      queueClone,
+      startingNum,
+      "bfs"
+    );
+
+    while (queueClone.length > 0) {
+      const curr = queueClone.shift();
+      if (visitedBfsClone.indexOf(curr) >= 0) {
+        continue;
       }
 
-      while (tempQueue.length > 0) {
-        const curr = tempQueue.shift();
-        if (tempVisitedBfs.indexOf(curr) >= 0) {
-          continue;
-        }
+      if (confirmTargetFound(curr, targetNum, "bfs")) break;
 
-        if (curr === targetNum) {
-          setTargetFoundBfs(true);
-          break;
-        }
-        tempVisitedBfs.push(curr);
-        const currNeighbours = getNeighbours(curr, "bfs");
-        tempQueue.push(...currNeighbours);
-      }
-      tempVisitedBfs.push(targetNum);
-      setVisitedBfs([...tempVisitedBfs]);
-      setQueue([]);
+      visitedBfsClone.push(curr);
+      const currNeighbours = getNeighbours(curr, "bfs");
+      queueClone.push(...currNeighbours);
     }
+    visitedBfsClone.push(targetNum);
+    setVisitedBfs([...visitedBfsClone]);
+    setQueue([]);
   }, [startingNum, queue]);
 
   useEffect(() => {
     if (!targetFoundDfs) {
-      let tempVisitedDfs = visitedDfs;
-      let tempStack = stack;
+      let visitedDfsClone = visitedDfs;
+      let stackClone = stack;
 
       if (startingNum === 0) return;
-      if (initStackDfs) {
-        tempStack.push(startingNum);
-        setInitStackDfs(false);
-      }
+      pushFirstElementToArray(
+        isFirstElementInStack,
+        stackClone,
+        startingNum,
+        "dfs"
+      );
 
-      while (tempStack.length > 0) {
-        const curr = tempStack.pop();
-        if (tempVisitedDfs.indexOf(curr) >= 0) {
+      while (stackClone.length > 0) {
+        const curr = stackClone.pop();
+        if (visitedDfsClone.indexOf(curr) >= 0) {
           continue;
         }
 
-        if (curr === targetNum) {
-          setTargetFoundDfs(true);
-          break;
-        }
-        tempVisitedDfs.push(curr);
+        if (confirmTargetFound(curr, targetNum, "dfs")) break;
+        // if (curr === targetNum) {
+        //   setTargetFoundDfs(true);
+        //   break;
+        // }
+        visitedDfsClone.push(curr);
         const currNeighbours = getNeighbours(curr, "dfs");
-        tempStack.push(...currNeighbours);
+        stackClone.push(...currNeighbours);
       }
-      tempVisitedDfs.push(targetNum);
-      setVisitedDfs([...tempVisitedDfs]);
+      visitedDfsClone.push(targetNum);
+      setVisitedDfs([...visitedDfsClone]);
       setStack([]);
     }
   }, [startingNum, stack]);
 
-  const getNeighbours = (num, type) => {
+  /**
+   * pushFirstElementToQueue adds the starting number to the queue.
+   * @param {a boolean that shows if queue is empty} isFirstElementInQueue
+   * @param {A temporary queue gotten from state queue. It can be updated without using setState.} queueClone
+   * @param {A function for setting the isFirstElementInQueue} setIsFirstElementInQueue
+   * @param {The starting point of the algorithm} startingNum
+   * @param {determines if it's bfs or dfs} algorithm
+   */
+  const pushFirstElementToArray = (
+    isFirstElementInArray,
+    arrayClone,
+    startingNum,
+    algorithm
+  ) => {
+    if (isFirstElementInArray) {
+      arrayClone.push(startingNum);
+      if (algorithm === "bfs") setIsFirstElementInQueue(false);
+      else setIsFirstElementInStack(false);
+    }
+  };
+
+  /**
+   * confirmTargetFound checks if the current number equals
+   * the target number.
+   * @param {The value of the current element or number} curr
+   * @param {The target number} targetNum
+   * @param {determines if it's bfs or dfs} algorithm
+   * @returns
+   */
+  const confirmTargetFound = (curr, targetNum, algorithm) => {
+    if (curr === targetNum) {
+      if (algorithm === "bfs") setTargetFoundBfs(true);
+      else setTargetFoundDfs(true);
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * getNeighbours returns all the element(numbers) adjacent to
+   * num
+   * @param {the number whoose neighbors are to be returned} num
+   * @param {determines if it's bfs or dfs} algorithm
+   * @returns
+   */
+  const getNeighbours = (num, algorithm) => {
     let neighbours = [];
     if (num - 10 > 0) {
       neighbours.push(num - 10);
@@ -121,13 +176,13 @@ export const AppProvider = ({ children }) => {
       }
     }
 
-    if (type === "bfs") {
+    if (algorithm === "bfs") {
       neighbours = neighbours.filter((val) => {
         if (visitedBfs.indexOf(val) < 0) {
           return val;
         }
       });
-    } else if (type === "dfs") {
+    } else if (algorithm === "dfs") {
       neighbours = neighbours.filter((val) => {
         if (visitedDfs.indexOf(val) < 0) {
           return val;
@@ -138,6 +193,9 @@ export const AppProvider = ({ children }) => {
     return neighbours;
   };
 
+  /**
+   * Effect that handles the shading of all visitedBfs nodes at interval
+   */
   useEffect(() => {
     let id = "";
     if (targetFoundBfs && visitedBfs.length > 0) {
@@ -159,6 +217,9 @@ export const AppProvider = ({ children }) => {
     };
   }, [targetFoundBfs, visitedBfs]);
 
+  /**
+   * Effect that handles the shading of all visitedDfs nodes at interval
+   */
   useEffect(() => {
     let id = "";
     if (targetFoundDfs && visitedDfs.length > 0) {
@@ -180,17 +241,21 @@ export const AppProvider = ({ children }) => {
     };
   }, [targetFoundDfs, visitedDfs]);
 
+  /**
+   * Resets both boards whenever a new value is enterred
+   * into the form.
+   */
   const reset = () => {
     setVisitedBfs([]);
     setTargetFoundBfs(false);
-    setInitQueueBfs(true);
+    setIsFirstElementInQueue(true);
     setReflectVisitedBfs([]);
     setBfsCompleted(false);
     setBfsCompletionTime(0);
 
     setVisitedDfs([]);
     setTargetFoundDfs(false);
-    setInitStackDfs(true);
+    setIsFirstElementInStack(true);
     setReflectVisitedDfs([]);
     setDfsCompleted(false);
     setDfsCompletionTime(0);
